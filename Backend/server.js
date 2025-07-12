@@ -34,3 +34,4 @@ app.get("/", (req, res)=>{
     res.json({message:"Hello from ReWear server you've reahed the start api"})
 })
 
+app.listen(PORT, ()=>console.log("Server started at ", PORT));
