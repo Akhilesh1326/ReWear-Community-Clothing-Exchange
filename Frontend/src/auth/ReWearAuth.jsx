@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Recycle, Shirt, User, Mail, Lock, ArrowRight } from 'lucide-react';
+import axios from 'axios';
 
 const ReWearAuth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    firstname: '',
+    lastname: ''
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,29 +24,66 @@ const ReWearAuth = () => {
   };
 
   const handleSubmit = async (e) => {
+    e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    if (!isLogin && formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+    try {
+      if (!isLogin) {
+        // Registration validation
+        if (formData.password !== formData.confirmPassword) {
+          alert('Passwords do not match!');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Registration API call
+        const response = await axios.post('http://localhost:8000/api/register', {
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          firstname: formData.firstname,
+          lastname: formData.lastname
+        },{
+          withCredentials: true
+        });
+        
+        if (response.status === 200) {
+          alert('Registration successful!');
+          // Optionally redirect or update UI state
+        }
+      } else {
+        // Login API call
+        const response = await axios.post('http://localhost:8000/api/login', {
+          username: formData.username,
+          password: formData.password
+        },{
+          withCredentials: true
+        });
+        
+        if (response.status === 200) {
+          alert('Login successful!');
+          // Optionally redirect or update UI state
+        }
+      }
+    } catch (error) {
+      console.error('API Error:', error);
+      const errorMessage = error.response?.data?.message || 
+                          (isLogin ? 'Login failed' : 'Registration failed');
+      alert(errorMessage);
+    } finally {
       setIsLoading(false);
-      return;
     }
-    
-    console.log('Form submitted:', formData);
-    alert(isLogin ? 'Login successful!' : 'Registration successful!');
-    setIsLoading(false);
   };
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setFormData({
-      name: '',
+      username: '',
       email: '',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      firstname: '',
+      lastname: ''
     });
     setShowPassword(false);
     setShowConfirmPassword(false);
@@ -54,16 +94,16 @@ const ReWearAuth = () => {
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-emerald-200 to-teal-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-cyan-200 to-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-gradient-to-br from-teal-200 to-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-50 animate-pulse animation-delay-4000"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-cyan-200 to-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-gradient-to-br from-teal-200 to-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-50 animate-pulse delay-2000"></div>
       </div>
 
       {/* Floating Icons */}
       <div className="absolute inset-0 pointer-events-none">
-        <Shirt className="absolute top-20 left-20 w-8 h-8 text-emerald-300 animate-float" />
-        <Recycle className="absolute top-32 right-32 w-6 h-6 text-teal-300 animate-float animation-delay-1000" />
-        <Shirt className="absolute bottom-32 left-32 w-7 h-7 text-cyan-300 animate-float animation-delay-2000" />
-        <Recycle className="absolute bottom-20 right-20 w-9 h-9 text-emerald-300 animate-float animation-delay-3000" />
+        <Shirt className="absolute top-20 left-20 w-8 h-8 text-emerald-300 animate-bounce" />
+        <Recycle className="absolute top-32 right-32 w-6 h-6 text-teal-300 animate-bounce delay-500" />
+        <Shirt className="absolute bottom-32 left-32 w-7 h-7 text-cyan-300 animate-bounce delay-1000" />
+        <Recycle className="absolute bottom-20 right-20 w-9 h-9 text-emerald-300 animate-bounce delay-1500" />
       </div>
 
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
@@ -92,6 +132,7 @@ const ReWearAuth = () => {
             {/* Toggle Buttons */}
             <div className="flex bg-gray-100 rounded-2xl p-1 mb-8">
               <button
+                type="button"
                 onClick={() => setIsLogin(true)}
                 className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-300 ${
                   isLogin
@@ -102,6 +143,7 @@ const ReWearAuth = () => {
                 Sign In
               </button>
               <button
+                type="button"
                 onClick={() => setIsLogin(false)}
                 className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-300 ${
                   !isLogin
@@ -114,8 +156,24 @@ const ReWearAuth = () => {
             </div>
 
             {/* Form */}
-            <div className="space-y-6">
-              {/* Name Field (Register only) */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Username Field */}
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  placeholder="Username"
+                  required
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 placeholder-gray-400"
+                />
+              </div>
+
+              {/* First Name Field (Register only) */}
               {!isLogin && (
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -123,31 +181,51 @@ const ReWearAuth = () => {
                   </div>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name}
+                    name="firstname"
+                    value={formData.firstname}
                     onChange={handleInputChange}
-                    placeholder="Full Name"
+                    placeholder="First Name"
                     required={!isLogin}
                     className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 placeholder-gray-400"
                   />
                 </div>
               )}
 
-              {/* Email Field */}
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+              {/* Last Name Field (Register only) */}
+              {!isLogin && (
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+                  </div>
+                  <input
+                    type="text"
+                    name="lastname"
+                    value={formData.lastname}
+                    onChange={handleInputChange}
+                    placeholder="Last Name"
+                    required={!isLogin}
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 placeholder-gray-400"
+                  />
                 </div>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Email Address"
-                  required
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 placeholder-gray-400"
-                />
-              </div>
+              )}
+
+              {/* Email Field (Register only) */}
+              {!isLogin && (
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+                  </div>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="Email Address"
+                    required={!isLogin}
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 placeholder-gray-400"
+                  />
+                </div>
+              )}
 
               {/* Password Field */}
               <div className="relative group">
@@ -208,7 +286,7 @@ const ReWearAuth = () => {
 
               {/* Submit Button */}
               <button
-                onClick={handleSubmit}
+                type="submit"
                 disabled={isLoading}
                 className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2"
               >
@@ -221,7 +299,7 @@ const ReWearAuth = () => {
                   </>
                 )}
               </button>
-            </div>
+            </form>
 
             {/* Divider */}
             <div className="my-8 flex items-center">
@@ -232,10 +310,16 @@ const ReWearAuth = () => {
 
             {/* Social Login */}
             <div className="space-y-3">
-              <button className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-2xl transition-all duration-300 hover:shadow-md transform hover:scale-105">
+              <button 
+                type="button"
+                className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-2xl transition-all duration-300 hover:shadow-md transform hover:scale-105"
+              >
                 Continue with Google
               </button>
-              <button className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-2xl transition-all duration-300 hover:shadow-md transform hover:scale-105">
+              <button 
+                type="button"
+                className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-2xl transition-all duration-300 hover:shadow-md transform hover:scale-105"
+              >
                 Continue with Facebook
               </button>
             </div>
@@ -246,6 +330,7 @@ const ReWearAuth = () => {
                 {isLogin ? "Don't have an account? " : "Already have an account? "}
               </span>
               <button
+                type="button"
                 onClick={toggleMode}
                 className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
               >
@@ -267,37 +352,6 @@ const ReWearAuth = () => {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        
-        .animation-delay-1000 {
-          animation-delay: 1s;
-        }
-        
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        
-        .animation-delay-3000 {
-          animation-delay: 3s;
-        }
-        
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-        
-        .shadow-3xl {
-          box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
-        }
-      `}</style>
     </div>
   );
 };
