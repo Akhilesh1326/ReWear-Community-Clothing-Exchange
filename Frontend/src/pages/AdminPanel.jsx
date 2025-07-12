@@ -11,25 +11,25 @@ const ReWearAdminPanel = () => {
 
   // Sample Data (replace with actual data from a backend)
   const [users, setUsers] = useState([
-    { id: 'user_001', name: 'Alice Johnson', email: 'alice.j@example.com', status: 'Active', joined: '2023-01-15', points: 120 },
-    { id: 'user_002', name: 'Bob Williams', email: 'bob.w@example.com', status: 'Inactive', joined: '2023-02-20', points: 50 },
-    { id: 'user_003', name: 'Charlie Brown', email: 'charlie.b@example.com', status: 'Active', joined: '2023-03-10', points: 200 },
-    { id: 'user_004', name: 'Diana Prince', email: 'diana.p@example.com', status: 'Active', joined: '2023-04-01', points: 80 },
-    { id: 'user_005', name: 'Eve Adams', email: 'eve.a@example.com', status: 'Suspended', joined: '2023-05-05', points: 0 },
+    { id: 'user_001', name: 'Akhilesh Pimple', email: 'akhilesh.p@example.com', status: 'Active', joined: '2023-01-15', points: 120 },
+    { id: 'user_002', name: 'Ashwanti Gaikwad', email: 'ashwanti.g@example.com', status: 'Inactive', joined: '2023-02-20', points: 50 },
+    { id: 'user_003', name: 'Om Shete', email: 'om.s@example.com', status: 'Active', joined: '2023-03-10', points: 200 },
+    { id: 'user_004', name: 'Rishabh Kadadore', email: 'rishabh.k@example.com', status: 'Active', joined: '2023-04-01', points: 80 },
+    { id: 'user_005', name: 'Shravani Jadhav', email: 'shravani.j@example.com', status: 'Suspended', joined: '2023-05-05', points: 0 },
   ]);
 
   const [orders, setOrders] = useState([
-    { id: 'order_001', userId: 'user_001', userName: 'Alice Johnson', type: 'Swap', status: 'Completed', date: '2024-06-20', value: 'Shirt for Jeans' },
-    { id: 'order_002', userId: 'user_003', userName: 'Charlie Brown', type: 'Redemption', status: 'Pending', date: '2024-06-22', value: '150 Points' },
-    { id: 'order_003', userId: 'user_002', userName: 'Bob Williams', type: 'Swap', status: 'Cancelled', date: '2024-06-18', value: 'Dress for Skirt' },
-    { id: 'order_004', userId: 'user_004', userName: 'Diana Prince', type: 'Redemption', status: 'Completed', date: '2024-06-25', value: '80 Points' },
+    { id: 'order_001', userId: 'user_001', userName: 'Akhilesh Pimple', type: 'Swap', status: 'Completed', date: '2024-06-20', value: 'Shirt for Jeans' },
+    { id: 'order_002', userId: 'user_003', userName: 'Om Shete', type: 'Redemption', status: 'Pending', date: '2024-06-22', value: '150 Points' },
+    { id: 'order_003', userId: 'user_002', userName: 'Ashwanti Gaikwad', type: 'Swap', status: 'Cancelled', date: '2024-06-18', value: 'Dress for Skirt' },
+    { id: 'order_004', userId: 'user_004', userName: 'Rishabh Kadadore', type: 'Redemption', status: 'Completed', date: '2024-06-25', value: '80 Points' },
   ]);
 
   const [listings, setListings] = useState([
-    { id: 'listing_001', userId: 'user_001', userName: 'Alice Johnson', item: 'Blue Denim Jacket', status: 'Available', date: '2024-06-10', description: 'A stylish blue denim jacket, size M, good condition.', imageUrl: 'https://placehold.co/150x150/E0F2F1/004D40?text=Jacket' },
-    { id: 'listing_002', userId: 'user_003', userName: 'Charlie Brown', item: 'Vintage Silk Scarf', status: 'Pending Swap', date: '2024-06-12', description: 'Hand-dyed vintage silk scarf with floral patterns.', imageUrl: 'https://placehold.co/150x150/E0F2F1/004D40?text=Scarf' },
-    { id: 'listing_003', userId: 'user_005', userName: 'Eve Adams', item: 'Black Leather Boots', status: 'Removed', date: '2024-06-05', description: 'Comfortable black leather boots, size 7, worn once.', imageUrl: 'https://placehold.co/150x150/E0F2F1/004D40?text=Boots' },
-    { id: 'listing_004', userId: 'user_004', userName: 'Diana Prince', item: 'Striped T-Shirt', status: 'Available', date: '2024-06-15', description: 'Soft cotton striped t-shirt, size S, like new.', imageUrl: 'https://placehold.co/150x150/E0F2F1/004D40?text=T-Shirt' },
+    { id: 'listing_001', userId: 'user_001', userName: 'Akhilesh Pimple', item: 'Blue Denim Jacket', status: 'Available', date: '2024-06-10', description: 'A stylish blue denim jacket, size M, good condition.', imageUrl: 'https://placehold.co/150x150/E0F2F1/004D40?text=Jacket' },
+    { id: 'listing_002', userId: 'user_003', userName: 'Om Shete', item: 'Vintage Silk Scarf', status: 'Pending Swap', date: '2024-06-12', description: 'Hand-dyed vintage silk scarf with floral patterns.', imageUrl: 'https://placehold.co/150x150/E0F2F1/004D40?text=Scarf' },
+    { id: 'listing_003', userId: 'user_005', userName: 'Shravani Jadhav', item: 'Black Leather Boots', status: 'Removed', date: '2024-06-05', description: 'Comfortable black leather boots, size 7, worn once.', imageUrl: 'https://placehold.co/150x150/E0F2F1/004D40?text=Boots' },
+    { id: 'listing_004', userId: 'user_004', userName: 'Rishabh Kadadore', item: 'Striped T-Shirt', status: 'Available', date: '2024-06-15', description: 'Soft cotton striped t-shirt, size S, like new.', imageUrl: 'https://placehold.co/150x150/E0F2F1/004D40?text=T-Shirt' },
   ]);
 
   // Notification handling
@@ -204,7 +204,7 @@ const ReWearAdminPanel = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-xs sm:text-sm text-gray-700">{user.joined}</td>
-                      <td className="py-3 px-4 text-xs sm:text-sm text-gray-700">{user.points}</td>
+                      <td className="py-3 px-4 text-sm text-gray-700">{user.points}</td>
                       <td className="py-3 px-4 text-center">
                         <div className="flex justify-center space-x-1 sm:space-x-2">
                           <button
