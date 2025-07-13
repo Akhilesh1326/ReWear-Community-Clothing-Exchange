@@ -25,9 +25,20 @@ import {
   Flame,
   Crown,
   Gem,
+  Upload,
+  Camera,
+  Tag,
+  DollarSign,
+  Package,
+  Palette,
+  Ruler,
+  CheckCircle,
 } from "lucide-react"
 
+import { useNavigate } from "react-router-dom"
+
 const ReWearMarketplace = () => {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState("grid") // 'grid' or 'list'
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
@@ -36,6 +47,7 @@ const ReWearMarketplace = () => {
   const [likedItems, setLikedItems] = useState(new Set())
   const [isLoading, setIsLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [showListItemModal, setShowListItemModal] = useState(false)
   const [filters, setFilters] = useState({
     condition: [],
     size: [],
@@ -44,18 +56,31 @@ const ReWearMarketplace = () => {
     color: [],
   })
 
+  // Form state for new item
+  const [newItem, setNewItem] = useState({
+    title: "",
+    description: "",
+    pointValue: "",
+    size: "",
+    condition: "good",
+    color: "",
+    brand: "",
+    tags: "",
+    category: "tops",
+    images: [],
+  })
+
   // Sample data based on your schema
   const categories = [
-    { id: "all", name: "All Items", icon: "🌟", count: 1247 },
-    { id: "jackets", name: "Jackets", icon: "🧥", count: 234 },
-    { id: "dresses", name: "Dresses", icon: "👗", count: 189 },
-    { id: "shoes", name: "Shoes", icon: "👟", count: 156 },
-    { id: "accessories", name: "Accessories", icon: "👜", count: 98 },
-    { id: "tops", name: "Tops", icon: "👕", count: 267 },
+    { id: "all", name: "All Items", icon: "🌟", count: 11 },
+    { id: "jackets", name: "Jackets", icon: "🧥", count: 3 },
+    { id: "dresses", name: "Dresses", icon: "👗", count: 1 },
+    { id: "shoes", name: "Shoes", icon: "👟", count: 2 },
+    { id: "tops", name: "Tops", icon: "👕", count: 3 },
     { id: "bottoms", name: "Bottoms", icon: "👖", count: 145 },
   ]
 
-  const items = [
+  const [items, setItems] = useState([
     {
       itemId: "550e8400-e29b-41d4-a716-446655440000",
       title: "Vintage Leather Motorcycle Jacket",
@@ -206,7 +231,7 @@ const ReWearMarketplace = () => {
         isVerified: true,
       },
     },
-  ]
+  ])
 
   const featuredItems = items.filter((item) => item.isFeatured)
   const regularItems = items.filter((item) => !item.isFeatured)
@@ -234,6 +259,90 @@ const ReWearMarketplace = () => {
     return colors[condition] || "bg-gray-100 text-gray-800"
   }
 
+  const generateItemId = () => {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0
+      const v = c == "x" ? r : (r & 0x3) | 0x8
+      return v.toString(16)
+    })
+  }
+
+  const handleSubmitNewItem = (e) => {
+    e.preventDefault()
+
+    if (!newItem.title || !newItem.description || !newItem.pointValue) {
+      alert("Please fill in all required fields")
+      return
+    }
+
+    const itemToAdd = {
+      itemId: generateItemId(),
+      title: newItem.title,
+      description: newItem.description,
+      pointValue: Number.parseInt(newItem.pointValue),
+      size: newItem.size,
+      condition: newItem.condition,
+      color: newItem.color,
+      brand: newItem.brand,
+      tags: newItem.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag),
+      status: "approved",
+      isFeatured: false,
+      isAvailable: true,
+      viewCount: 0,
+      createdAt: new Date().toISOString(),
+      images: newItem.images.length > 0 ? newItem.images : ["/placeholder.svg?height=400&width=400"],
+      owner: {
+        firstName: "You",
+        lastName: "",
+        username: "current_user",
+        profileImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
+        rating: 4.5,
+        isVerified: true,
+      },
+    }
+
+    setItems((prevItems) => [itemToAdd, ...prevItems])
+    setShowListItemModal(false)
+
+    // Reset form
+    setNewItem({
+      title: "",
+      description: "",
+      pointValue: "",
+      size: "",
+      condition: "good",
+      color: "",
+      brand: "",
+      tags: "",
+      category: "tops",
+      images: [],
+    })
+  }
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files)
+    // In a real app, you'd upload these to a server
+    // For demo purposes, we'll use placeholder URLs
+    const imageUrls = files.map(
+      (file, index) =>
+        `https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop&random=${Date.now() + index}`,
+    )
+    setNewItem((prev) => ({
+      ...prev,
+      images: [...prev.images, ...imageUrls],
+    }))
+  }
+
+  const removeImage = (indexToRemove) => {
+    setNewItem((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, index) => index !== indexToRemove),
+    }))
+  }
+
   const ItemCard = ({ item, featured = false }) => (
     <div
       className={`group relative bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden border border-white/20 hover:shadow-2xl transition-all duration-500 transform hover:scale-105 cursor-pointer ${featured ? "ring-2 ring-yellow-400 shadow-xl" : ""}`}
@@ -243,6 +352,14 @@ const ReWearMarketplace = () => {
         <div className="absolute top-4 left-4 z-10 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
           <Crown className="w-4 h-4" />
           <span>Featured</span>
+        </div>
+      )}
+
+      {/* New Item Badge */}
+      {new Date(item.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000) && (
+        <div className="absolute top-4 left-4 z-10 bg-gradient-to-r from-green-400 to-emerald-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
+          <Sparkles className="w-4 h-4" />
+          <span>New</span>
         </div>
       )}
 
@@ -260,12 +377,11 @@ const ReWearMarketplace = () => {
       {/* Image */}
       <div className="aspect-square overflow-hidden relative">
         <img
-          src={item.images[0] || "/placeholder.svg"}
+          src={item.images[0] || "/placeholder.svg?height=400&width=400"}
           alt={item.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
         {/* Quick Actions Overlay */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <div className="flex space-x-2">
@@ -305,7 +421,7 @@ const ReWearMarketplace = () => {
         <div className="flex items-center space-x-3 mb-4">
           <div className="relative">
             <img
-              src={item.owner.profileImage || "/placeholder.svg"}
+              src={item.owner.profileImage || "/placeholder.svg?height=100&width=100"}
               alt={item.owner.firstName}
               className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm"
             />
@@ -407,7 +523,10 @@ const ReWearMarketplace = () => {
 
               {/* User Actions */}
               <div className="flex items-center space-x-3">
-                <button className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-2xl font-medium hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2">
+                <button
+                  onClick={() => setShowListItemModal(true)}
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-2xl font-medium hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
+                >
                   <Plus className="w-4 h-4" />
                   <span>List Item</span>
                 </button>
@@ -419,6 +538,217 @@ const ReWearMarketplace = () => {
           </div>
         </div>
 
+        {/* List Item Modal */}
+        {showListItemModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                    <Plus className="w-6 h-6 mr-2 text-emerald-600" />
+                    List New Item
+                  </h2>
+                  <button
+                    onClick={() => setShowListItemModal(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmitNewItem} className="space-y-6">
+                  {/* Images Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                      <Camera className="w-4 h-4 mr-2" />
+                      Photos (up to 5)
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-emerald-400 transition-colors">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="image-upload"
+                      />
+                      <label htmlFor="image-upload" className="cursor-pointer">
+                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-600">Click to upload photos</p>
+                      </label>
+                    </div>
+                    {newItem.images.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 mt-4">
+                        {newItem.images.map((image, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={image || "/placeholder.svg"}
+                              alt={`Upload ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Title */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newItem.title}
+                      onChange={(e) => setNewItem((prev) => ({ ...prev, title: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="e.g., Vintage Leather Jacket"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                    <textarea
+                      required
+                      rows={4}
+                      value={newItem.description}
+                      onChange={(e) => setNewItem((prev) => ({ ...prev, description: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="Describe your item in detail..."
+                    />
+                  </div>
+
+                  {/* Row 1: Points, Size, Condition */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        <DollarSign className="w-4 h-4 mr-1" />
+                        Points *
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        value={newItem.pointValue}
+                        onChange={(e) => setNewItem((prev) => ({ ...prev, pointValue: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        placeholder="50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        <Ruler className="w-4 h-4 mr-1" />
+                        Size
+                      </label>
+                      <select
+                        value={newItem.size}
+                        onChange={(e) => setNewItem((prev) => ({ ...prev, size: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      >
+                        <option value="">Select Size</option>
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="XXL">XXL</option>
+                        <option value="One Size">One Size</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        <Package className="w-4 h-4 mr-1" />
+                        Condition
+                      </label>
+                      <select
+                        value={newItem.condition}
+                        onChange={(e) => setNewItem((prev) => ({ ...prev, condition: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      >
+                        <option value="new">New</option>
+                        <option value="like-new">Like New</option>
+                        <option value="good">Good</option>
+                        <option value="fair">Fair</option>
+                        <option value="poor">Poor</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Row 2: Brand, Color */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+                      <input
+                        type="text"
+                        value={newItem.brand}
+                        onChange={(e) => setNewItem((prev) => ({ ...prev, brand: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        placeholder="e.g., Nike, Zara, H&M"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        <Palette className="w-4 h-4 mr-1" />
+                        Color
+                      </label>
+                      <input
+                        type="text"
+                        value={newItem.color}
+                        onChange={(e) => setNewItem((prev) => ({ ...prev, color: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        placeholder="e.g., Black, Blue, Red"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                      <Tag className="w-4 h-4 mr-1" />
+                      Tags (comma separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={newItem.tags}
+                      onChange={(e) => setNewItem((prev) => ({ ...prev, tags: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="e.g., vintage, casual, summer"
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="flex space-x-4 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowListItemModal(false)}
+                      className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-xl font-medium hover:from-emerald-600 hover:to-teal-700 transition-all flex items-center justify-center space-x-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      <span>List Item</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Hero Stats */}
@@ -427,28 +757,28 @@ const ReWearMarketplace = () => {
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <ShoppingBag className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">1,247</h3>
+              <h3 className="text-2xl font-bold text-gray-900">{items.length}</h3>
               <p className="text-gray-600">Active Items</p>
             </div>
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-white/20 text-center">
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <User className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">8,934</h3>
+              <h3 className="text-2xl font-bold text-gray-900">1</h3>
               <p className="text-gray-600">Active Users</p>
             </div>
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-white/20 text-center">
               <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Recycle className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">15,672</h3>
+              <h3 className="text-2xl font-bold text-gray-900">7</h3>
               <p className="text-gray-600">Items Swapped</p>
             </div>
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-white/20 text-center">
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">2.1M</h3>
+              <h3 className="text-2xl font-bold text-gray-900">325</h3>
               <p className="text-gray-600">Points Earned</p>
             </div>
           </div>
@@ -493,7 +823,7 @@ const ReWearMarketplace = () => {
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div onClick={()=>(navigate("/itempage"))} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {featuredItems.map((item) => (
                   <ItemCard key={item.itemId} item={item} featured={true} />
                 ))}
@@ -512,7 +842,6 @@ const ReWearMarketplace = () => {
                 <span>Filters</span>
                 {showFilters && <X className="w-4 h-4" />}
               </button>
-
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -525,7 +854,6 @@ const ReWearMarketplace = () => {
                 <option value="popular">Most Popular</option>
               </select>
             </div>
-
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setViewMode("grid")}
@@ -611,7 +939,6 @@ const ReWearMarketplace = () => {
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-bold text-gray-900">All Items ({regularItems.length})</h2>
             </div>
-
             <div
               className={`grid gap-8 ${
                 viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"
