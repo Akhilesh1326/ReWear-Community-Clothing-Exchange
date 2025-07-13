@@ -59,13 +59,13 @@ const ReWearItemPage = () => {
     ],
     owner: {
       userId: "550e8400-e29b-41d4-a716-446655440001",
-      firstName: "Sarah",
-      lastName: "Johnson",
-      username: "sarah_vintage",
+      firstName: "Akhilesh",
+      lastName: "Pimple",
+      username: "akhi_pie",
       profileImage: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop",
-      pointsBalance: 425,
-      itemsShared: 23,
-      successfulSwaps: 18,
+      pointsBalance: 120,
+      itemsShared: 2,
+      successfulSwaps: 1,
       rating: 4.8,
       joinDate: "2023-06-10",
       bio: "Sustainable fashion enthusiast sharing quality pieces for a greener future! 🌱"
@@ -81,7 +81,7 @@ const ReWearItemPage = () => {
       itemId: "item1",
       title: "Designer Denim Jacket",
       image: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=200&h=200&fit=crop",
-      pointValue: 120,
+      pointValue: 50,
       condition: "like-new"
     },
     {
