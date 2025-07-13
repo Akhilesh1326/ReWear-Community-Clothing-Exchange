@@ -26,10 +26,17 @@ import {
   ChevronRight,
   Search,
   MoreHorizontal,
+  Loader2,
+  AlertCircle,
 } from "lucide-react"
 
+import { useNavigate } from "react-router-dom"
+
+const API_BASE_URL = "http://localhost:8000"
 
 const DashBoard = () => {
+
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview")
   const [animatedStats, setAnimatedStats] = useState({
     points: 0,
@@ -39,372 +46,171 @@ const DashBoard = () => {
   })
   const [notifications, setNotifications] = useState([])
   const [showNotifications, setShowNotifications] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Sample user data matching USERS table schema
-  const userData = {
-    user_id: "550e8400-e29b-41d4-a716-446655440001",
-    email: "sarah.johnson@email.com",
-    first_name: "Sarah",
-    last_name: "Johnson",
-    username: "fashion_forward_sarah",
-    phone: "+1-555-0123",
-    date_of_birth: "1995-03-15",
-    gender: "female",
-    address: "123 Fashion Street",
-    city: "New York",
-    state: "NY",
-    zip_code: "10001",
-    country: "USA",
-    profile_image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop",
-    bio: "Sustainable fashion enthusiast | Vintage collector | Sharing my closet for a better world 🌍",
-    points_balance: 2840,
-    user_type: "premium",
-    is_active: true,
-    email_verified: true,
-    created_at: "2023-06-12T00:00:00Z",
-    updated_at: "2024-01-25T10:30:00Z",
+  // Real data states
+  const [userData, setUserData] = useState(null)
+  const [userStats, setUserStats] = useState(null)
+  const [userItems, setUserItems] = useState([])
+  const [userSwaps, setUserSwaps] = useState([])
+  const [categories, setCategories] = useState([])
+  const [currentUserId, setCurrentUserId] = useState(null)
+
+  // API helper function
+  const apiCall = async (endpoint, options = {}) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
+        ...options,
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error(`API call failed for ${endpoint}:`, error)
+      throw error
+    }
   }
 
-  // Sample categories data
-  const categories = [
-    {
-      category_id: "cat-1",
-      name: "Outerwear",
-      description: "Jackets, coats, and blazers",
-      icon: "jacket",
-      is_active: true,
-      created_at: "2023-01-01T00:00:00Z",
-    },
-    {
-      category_id: "cat-2",
-      name: "Dresses",
-      description: "All types of dresses",
-      icon: "dress",
-      is_active: true,
-      created_at: "2023-01-01T00:00:00Z",
-    },
-  ]
+  // Get current user from JWT token
+  const getCurrentUser = async () => {
+    try {
+      const response = await apiCall("/api/auth/me")
+      return response.data
+    } catch (error) {
+      // Fallback: use a demo user ID for testing
+      console.warn("Could not get current user, using demo user")
+      return { user_id: "550e8400-e29b-41d4-a716-446655440001" }
+    }
+  }
 
-  // Sample items data matching ITEMS collection schema
-  const userItems = [
-    {
-      itemId: "item-1",
-      userId: userData.user_id,
-      categoryId: "cat-1",
-      title: "Vintage Leather Jacket",
-      description: "Beautiful vintage leather jacket in excellent condition. Perfect for fall and winter styling.",
-      size: "M",
-      condition: "like-new",
-      color: "Black",
-      brand: "Vintage Brand",
-      tags: ["vintage", "leather", "jacket", "black"],
-      pointValue: 150,
-      status: "approved",
-      isFeatured: true,
-      isAvailable: true,
-      viewCount: 234,
-      createdAt: "2024-01-15T10:30:00Z",
-      updatedAt: "2024-01-15T10:30:00Z",
-      approvedAt: "2024-01-15T11:00:00Z",
-      approvedBy: "admin-1",
-      images: [
-        {
-          imageId: "img-1",
-          itemId: "item-1",
-          imageUrl: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300&h=300&fit=crop",
-          isPrimary: true,
-          uploadOrder: 0,
-          createdAt: "2024-01-15T10:30:00Z",
-        },
-      ],
-    },
-    {
-      itemId: "item-2",
-      userId: userData.user_id,
-      categoryId: "cat-2",
-      title: "Designer Silk Dress",
-      description: "Elegant silk dress from a premium designer brand. Worn only once for a special occasion.",
-      size: "S",
-      condition: "like-new",
-      color: "Navy Blue",
-      brand: "Designer Brand",
-      tags: ["silk", "dress", "designer", "formal"],
-      pointValue: 200,
-      status: "swapped",
-      isFeatured: false,
-      isAvailable: false,
-      viewCount: 189,
-      createdAt: "2024-01-10T15:20:00Z",
-      updatedAt: "2024-01-18T14:30:00Z",
-      images: [
-        {
-          imageId: "img-2",
-          itemId: "item-2",
-          imageUrl: "https://images.unsplash.com/photo-1566479179817-c0b5b4b4b1e5?w=300&h=300&fit=crop",
-          isPrimary: true,
-          uploadOrder: 0,
-          createdAt: "2024-01-10T15:20:00Z",
-        },
-      ],
-    },
-    {
-      itemId: "item-3",
-      userId: userData.user_id,
-      categoryId: "cat-1",
-      title: "Casual Denim Jacket",
-      description: "Classic denim jacket perfect for casual outings. Great condition with minimal wear.",
-      size: "L",
-      condition: "good",
-      color: "Blue",
-      brand: "Denim Co",
-      tags: ["denim", "jacket", "casual", "blue"],
-      pointValue: 85,
-      status: "pending",
-      isFeatured: false,
-      isAvailable: true,
-      viewCount: 67,
-      createdAt: "2024-01-20T09:45:00Z",
-      updatedAt: "2024-01-20T09:45:00Z",
-      images: [
-        {
-          imageId: "img-3",
-          itemId: "item-3",
-          imageUrl: "https://images.unsplash.com/photo-1556906781-9a412961c28c?w=300&h=300&fit=crop",
-          isPrimary: true,
-          uploadOrder: 0,
-          createdAt: "2024-01-20T09:45:00Z",
-        },
-      ],
-    },
-  ]
+  // Fetch user data
+  const fetchUserData = async (userId) => {
+    try {
+      const response = await apiCall(`/api/users/${userId}`)
+      setUserData(response.data)
+    } catch (error) {
+      console.error("Failed to fetch user data:", error)
+      setError("Failed to load user data")
+    }
+  }
 
-  // Sample swaps data matching SWAPS table schema
-  const userSwaps = [
-    {
-      swap_id: "swap-1",
-      requester_id: userData.user_id,
-      owner_id: "user-2",
-      item_id: "item-4",
-      swap_type: "points",
-      status: "completed",
-      message: "Love this vintage piece! Would love to add it to my collection.",
-      points_used: 120,
-      created_at: "2024-01-18T14:30:00Z",
-      updated_at: "2024-01-18T16:45:00Z",
-      completed_at: "2024-01-18T16:45:00Z",
-      item: {
-        itemId: "item-4",
-        userId: "user-2",
-        categoryId: "cat-1",
-        title: "Vintage Band T-Shirt",
-        description: "Authentic vintage band t-shirt",
-        condition: "good",
-        tags: ["vintage", "band", "tshirt"],
-        pointValue: 120,
-        status: "swapped",
-        isFeatured: false,
-        isAvailable: false,
-        viewCount: 45,
-        createdAt: "2024-01-15T10:00:00Z",
-        updatedAt: "2024-01-18T16:45:00Z",
-        images: [
-          {
-            imageId: "img-4",
-            itemId: "item-4",
-            imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=100&h=100&fit=crop",
-            isPrimary: true,
-            uploadOrder: 0,
-            createdAt: "2024-01-15T10:00:00Z",
-          },
-        ],
-      },
-      owner: {
-        user_id: "user-2",
-        email: "emma.wilson@email.com",
-        first_name: "Emma",
-        last_name: "Wilson",
-        username: "emma_vintage",
-        profile_image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop",
-        points_balance: 1500,
-        user_type: "standard",
-        is_active: true,
-        email_verified: true,
-        created_at: "2023-08-20T00:00:00Z",
-        updated_at: "2024-01-18T16:45:00Z",
-      },
-    },
-    {
-      swap_id: "swap-2",
-      requester_id: "user-3",
-      owner_id: userData.user_id,
-      item_id: "item-1",
-      swap_type: "trade",
-      status: "accepted",
-      message: "Would love to trade my designer handbag for your leather jacket!",
-      points_used: 0,
-      created_at: "2024-01-22T11:15:00Z",
-      updated_at: "2024-01-22T14:30:00Z",
-      requester: {
-        user_id: "user-3",
-        email: "mike.chen@email.com",
-        first_name: "Mike",
-        last_name: "Chen",
-        username: "mike_fashion",
-        profile_image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop",
-        points_balance: 890,
-        user_type: "standard",
-        is_active: true,
-        email_verified: true,
-        created_at: "2023-09-10T00:00:00Z",
-        updated_at: "2024-01-22T14:30:00Z",
-      },
-    },
-    {
-      swap_id: "swap-3",
-      requester_id: userData.user_id,
-      owner_id: "user-4",
-      item_id: "item-5",
-      swap_type: "points",
-      status: "pending",
-      message: "This coat looks perfect for winter! Hope we can make a deal.",
-      points_used: 180,
-      created_at: "2024-01-25T16:45:00Z",
-      updated_at: "2024-01-25T16:45:00Z",
-      item: {
-        itemId: "item-5",
-        userId: "user-4",
-        categoryId: "cat-1",
-        title: "Wool Winter Coat",
-        description: "Warm wool coat for winter",
-        condition: "like-new",
-        tags: ["wool", "coat", "winter"],
-        pointValue: 180,
-        status: "approved",
-        isFeatured: true,
-        isAvailable: true,
-        viewCount: 123,
-        createdAt: "2024-01-20T12:00:00Z",
-        updatedAt: "2024-01-20T12:00:00Z",
-        images: [
-          {
-            imageId: "img-5",
-            itemId: "item-5",
-            imageUrl: "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=100&h=100&fit=crop",
-            isPrimary: true,
-            uploadOrder: 0,
-            createdAt: "2024-01-20T12:00:00Z",
-          },
-        ],
-      },
-      owner: {
-        user_id: "user-4",
-        email: "lisa.anderson@email.com",
-        first_name: "Lisa",
-        last_name: "Anderson",
-        username: "lisa_style",
-        profile_image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=50&h=50&fit=crop",
-        points_balance: 2100,
-        user_type: "standard",
-        is_active: true,
-        email_verified: true,
-        created_at: "2023-07-15T00:00:00Z",
-        updated_at: "2024-01-25T16:45:00Z",
-      },
-    },
-  ]
+  // Fetch user statistics
+  const fetchUserStats = async (userId) => {
+    try {
+      const response = await apiCall(`/api/users/${userId}/stats`)
+      setUserStats(response.data)
+    } catch (error) {
+      console.error("Failed to fetch user stats:", error)
+    }
+  }
 
-  // Sample point transactions
-  const pointTransactions = [
-    {
-      transaction_id: "pt-1",
-      user_id: userData.user_id,
-      item_id: "item-2",
-      swap_id: "swap-1",
-      points_amount: -120,
-      transaction_type: "spent",
-      description: "Points spent on Vintage Band T-Shirt swap",
-      created_at: "2024-01-18T16:45:00Z",
-    },
-    {
-      transaction_id: "pt-2",
-      user_id: userData.user_id,
-      item_id: "item-2",
-      points_amount: 200,
-      transaction_type: "earned",
-      description: "Points earned from Designer Silk Dress swap",
-      created_at: "2024-01-18T14:30:00Z",
-    },
-    {
-      transaction_id: "pt-3",
-      user_id: userData.user_id,
-      points_amount: 50,
-      transaction_type: "bonus",
-      description: "Weekly activity bonus",
-      created_at: "2024-01-22T00:00:00Z",
-    },
-  ]
+  // Fetch user items
+  const fetchUserItems = async (userId) => {
+    try {
+      const response = await apiCall(`/api/users/${userId}/items`)
+      setUserItems(response.data || [])
+    } catch (error) {
+      console.error("Failed to fetch user items:", error)
+      setUserItems([])
+    }
+  }
 
-  // Sample notifications
-  const sampleNotifications = [
-    {
-      notificationId: "notif-1",
-      userId: userData.user_id,
-      title: "Swap Request Accepted",
-      message: "Emma Wilson accepted your swap request for the Vintage Band T-Shirt",
-      type: "swap_accepted",
-      isRead: false,
-      createdAt: "2024-01-18T16:45:00Z",
-    },
-    {
-      notificationId: "notif-2",
-      userId: userData.user_id,
-      title: "Item Approved",
-      message: "Your Vintage Leather Jacket has been approved and is now live",
-      type: "item_approved",
-      isRead: false,
-      createdAt: "2024-01-15T11:00:00Z",
-    },
-    {
-      notificationId: "notif-3",
-      userId: userData.user_id,
-      title: "Points Earned",
-      message: "You earned 50 bonus points for weekly activity",
-      type: "points_earned",
-      isRead: true,
-      createdAt: "2024-01-22T00:00:00Z",
-    },
-  ]
+  // Fetch user swaps
+  const fetchUserSwaps = async (userId) => {
+    try {
+      const response = await apiCall(`/api/users/${userId}/swaps`)
+      setUserSwaps(response.data || [])
+    } catch (error) {
+      console.error("Failed to fetch user swaps:", error)
+      setUserSwaps([])
+    }
+  }
 
-  // Calculate derived stats
-  const completedSwaps = userSwaps.filter((swap) => swap.status === "completed").length
-  const approvedItems = userItems.filter((item) => item.status === "approved").length
-  const totalViews = userItems.reduce((sum, item) => sum + item.viewCount, 0)
-  const carbonSaved = completedSwaps * 2.5 // Estimated kg CO2 per swap
+  // Fetch notifications
+  const fetchNotifications = async (userId) => {
+    try {
+      const response = await apiCall(`/api/users/${userId}/notifications`)
+      setNotifications(response.data || [])
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error)
+      setNotifications([])
+    }
+  }
 
-  // Animate stats on mount
+  // Fetch categories
+  const fetchCategories = async () => {
+    try {
+      const response = await apiCall("/api/categories")
+      setCategories(response.data || [])
+    } catch (error) {
+      console.error("Failed to fetch categories:", error)
+      setCategories([])
+    }
+  }
+
+  // Initialize data
   useEffect(() => {
-    setNotifications(sampleNotifications)
-    const timer = setTimeout(() => {
-      setAnimatedStats({
-        points: userData.points_balance,
-        itemsListed: approvedItems,
-        swapsCompleted: completedSwaps,
-        carbonSaved: carbonSaved,
-      })
-    }, 500)
-    return () => clearTimeout(timer)
+    const initializeData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        // Get current user
+        const currentUser = await getCurrentUser()
+        const userId = currentUser.user_id
+        setCurrentUserId(userId)
+
+        // Fetch all data in parallel
+        await Promise.all([
+          fetchUserData(userId),
+          fetchUserStats(userId),
+          fetchUserItems(userId),
+          fetchUserSwaps(userId),
+          fetchNotifications(userId),
+          fetchCategories(),
+        ])
+      } catch (error) {
+        console.error("Failed to initialize data:", error)
+        setError("Failed to load dashboard data")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    initializeData()
   }, [])
+
+  // Animate stats when data is loaded
+  useEffect(() => {
+    if (userStats && userData) {
+      const timer = setTimeout(() => {
+        setAnimatedStats({
+          points: userData.points_balance || 0,
+          itemsListed: userStats.approved_items || 0,
+          swapsCompleted: userStats.completed_swaps || 0,
+          carbonSaved: (userStats.completed_swaps || 0) * 2.5,
+        })
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [userStats, userData])
 
   const getStatusColor = (status) => {
     const colors = {
-      // Item statuses
       pending: "bg-yellow-100 text-yellow-800",
       approved: "bg-green-100 text-green-800",
       rejected: "bg-red-100 text-red-800",
       swapped: "bg-blue-100 text-blue-800",
       deleted: "bg-gray-100 text-gray-800",
-      // Swap statuses
       accepted: "bg-emerald-100 text-emerald-800",
       completed: "bg-emerald-100 text-emerald-800",
       cancelled: "bg-red-100 text-red-800",
@@ -423,14 +229,7 @@ const DashBoard = () => {
     return colors[condition] || "bg-gray-100 text-gray-800"
   }
 
-  const StatCard = ({
-    icon: Icon,
-    title,
-    value,
-    subtitle,
-    trend,
-    color,
-  }) => (
+  const StatCard = ({ icon: Icon, title, value, subtitle, trend, color }) => (
     <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-white/20 hover:shadow-xl transition-all duration-500 transform hover:scale-105 group">
       <div className="flex items-center justify-between mb-4">
         <div
@@ -453,13 +252,13 @@ const DashBoard = () => {
 
   const ItemCard = ({ item }) => {
     const primaryImage = item.images?.find((img) => img.isPrimary) || item.images?.[0]
-    const likesCount = Math.floor(item.viewCount * 0.1) // Estimated likes based on views
+    const likesCount = Math.floor((item.viewCount || 0) * 0.1)
 
     return (
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/20 hover:shadow-lg transition-all duration-300 transform hover:scale-105 group">
         <div className="relative">
           <img
-            src={primaryImage?.imageUrl || "/placeholder.svg"}
+            src={primaryImage?.imageUrl || "/placeholder.svg?height=200&width=300"}
             alt={item.title}
             className="w-full h-48 object-cover"
           />
@@ -479,7 +278,7 @@ const DashBoard = () => {
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-1">
                   <Eye className="w-4 h-4" />
-                  <span>{item.viewCount}</span>
+                  <span>{item.viewCount || 0}</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Heart className="w-4 h-4" />
@@ -499,7 +298,9 @@ const DashBoard = () => {
               <Recycle className="w-4 h-4" />
               <span className="font-medium">{item.pointValue} points</span>
             </div>
-            <span className="text-sm text-gray-500">{new Date(item.createdAt).toLocaleDateString()}</span>
+            <span className="text-sm text-gray-500">
+              {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "N/A"}
+            </span>
           </div>
           {item.brand && <p className="text-sm text-gray-600 mb-1">Brand: {item.brand}</p>}
           {item.size && <p className="text-sm text-gray-600">Size: {item.size}</p>}
@@ -509,14 +310,26 @@ const DashBoard = () => {
   }
 
   const SwapCard = ({ swap }) => {
-    const otherUser = swap.requester_id === userData.user_id ? swap.owner : swap.requester
-    const itemImage = swap.item?.images?.find((img) => img.isPrimary)?.imageUrl
+    const otherUser =
+      swap.requester_id === currentUserId
+        ? {
+            first_name: swap.owner_first_name,
+            last_name: swap.owner_last_name,
+            username: swap.owner_username,
+            profile_image: swap.owner_profile_image,
+          }
+        : {
+            first_name: swap.requester_first_name,
+            last_name: swap.requester_last_name,
+            username: swap.requester_username,
+            profile_image: swap.requester_profile_image,
+          }
 
     return (
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:shadow-lg transition-all duration-300">
         <div className="flex items-center space-x-4 mb-4">
           <img
-            src={itemImage || "/placeholder.svg"}
+            src={swap.item?.primaryImage || "/placeholder.svg?height=64&width=64"}
             alt={swap.item?.title || "Item"}
             className="w-16 h-16 rounded-xl object-cover"
           />
@@ -524,7 +337,7 @@ const DashBoard = () => {
             <h3 className="font-semibold text-gray-900 mb-1">{swap.item?.title || "Unknown Item"}</h3>
             <div className="flex items-center space-x-2">
               <img
-                src={otherUser?.profile_image || "/placeholder.svg"}
+                src={otherUser?.profile_image || "/placeholder.svg?height=24&width=24"}
                 alt={otherUser?.username || "User"}
                 className="w-6 h-6 rounded-full"
               />
@@ -541,10 +354,14 @@ const DashBoard = () => {
           <div className="flex items-center space-x-4">
             <span className="flex items-center space-x-1">
               <Recycle className="w-4 h-4" />
-              <span>{swap.swap_type === "points" ? `${swap.points_used} points` : "Trade swap"}</span>
+              <span>{swap.swap_type === "points" ? `${swap.points_used || 0} points` : "Trade swap"}</span>
             </span>
           </div>
-          <span>{new Date(swap.completed_at || swap.created_at).toLocaleDateString()}</span>
+          <span>
+            {swap.completed_at || swap.created_at
+              ? new Date(swap.completed_at || swap.created_at).toLocaleDateString()
+              : "N/A"}
+          </span>
         </div>
         {swap.message && (
           <div className="mt-3 p-3 bg-gray-50 rounded-lg">
@@ -561,6 +378,47 @@ const DashBoard = () => {
       <p className="text-sm font-medium">{achievement}</p>
     </div>
   )
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-emerald-600 mx-auto mb-4" />
+          <p className="text-gray-600 text-lg">Loading your dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+          <p className="text-gray-600 text-lg mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // No user data
+  if (!userData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 text-lg">No user data available</p>
+        </div>
+      </div>
+    )
+  }
 
   const achievements = ["First Swap", "Eco Warrior", "Top Contributor", "Verified User"]
   const nextLevelPoints = 3000
@@ -611,6 +469,9 @@ const DashBoard = () => {
                   <Plus className="w-4 h-4" />
                   <span>List Item</span>
                 </button>
+                <button onClick={()=>{navigate("/log")}} className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-2xl font-medium hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2">
+                  <span>LogOut</span>
+                </button>
 
                 {/* Notifications */}
                 <div className="relative">
@@ -633,7 +494,7 @@ const DashBoard = () => {
                 <div className="flex items-center space-x-3">
                   <div className="relative">
                     <img
-                      src={userData.profile_image || "/placeholder.svg"}
+                      src={userData.profile_image || "/placeholder.svg?height=48&width=48"}
                       alt={userData.first_name}
                       className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg"
                     />
@@ -666,7 +527,7 @@ const DashBoard = () => {
                   <div>
                     <h1 className="text-4xl font-bold mb-2">Welcome back, {userData.first_name}! 👋</h1>
                     <p className="text-emerald-100 text-lg mb-6">
-                      You've saved {carbonSaved.toFixed(1)}kg of CO₂ through sustainable fashion choices!
+                      You've saved {animatedStats.carbonSaved.toFixed(1)}kg of CO₂ through sustainable fashion choices!
                     </p>
                     <div className="flex items-center space-x-6">
                       <div className="flex items-center space-x-2">
@@ -691,7 +552,6 @@ const DashBoard = () => {
                     </div>
                   </div>
                 </div>
-
                 {/* Progress Bar */}
                 <div className="mt-8">
                   <div className="flex items-center justify-between mb-2">
@@ -703,7 +563,7 @@ const DashBoard = () => {
                   <div className="w-full bg-white/20 rounded-full h-3">
                     <div
                       className="bg-white rounded-full h-3 transition-all duration-1000 ease-out"
-                      style={{ width: `${(userData.points_balance / nextLevelPoints) * 100}%` }}
+                      style={{ width: `${Math.min((userData.points_balance / nextLevelPoints) * 100, 100)}%` }}
                     ></div>
                   </div>
                 </div>
@@ -740,7 +600,7 @@ const DashBoard = () => {
             <StatCard
               icon={Leaf}
               title="CO₂ Saved"
-              value={animatedStats.carbonSaved}
+              value={Math.round(animatedStats.carbonSaved)}
               subtitle="Kilograms"
               trend={22}
               color="bg-gradient-to-br from-green-500 to-emerald-600"
@@ -788,8 +648,7 @@ const DashBoard = () => {
                     <ChevronRight className="w-4 h-4 ml-1" />
                   </div>
                 </div>
-
-                <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-white/20 hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer group">
+                <div onClick={()=>{navigate("/itemlisting")}} className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-white/20 hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer group">
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                     <Search className="w-6 h-6 text-white" />
                   </div>
@@ -800,7 +659,6 @@ const DashBoard = () => {
                     <ChevronRight className="w-4 h-4 ml-1" />
                   </div>
                 </div>
-
                 <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-white/20 hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer group">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                     <MessageCircle className="w-6 h-6 text-white" />
@@ -821,47 +679,28 @@ const DashBoard = () => {
                   Recent Activity
                 </h2>
                 <div className="space-y-4">
-                  {[
-                    {
-                      icon: CheckCircle,
-                      text: "Swap completed with Emma Wilson",
-                      time: "2 hours ago",
-                      color: "text-green-600",
-                    },
-                    {
-                      icon: Heart,
-                      text: "Your Vintage Jacket received 5 new views",
-                      time: "4 hours ago",
-                      color: "text-pink-600",
-                    },
-                    {
-                      icon: Zap,
-                      text: "Earned 200 points from completed swap",
-                      time: "1 day ago",
-                      color: "text-yellow-600",
-                    },
-                    {
-                      icon: MessageCircle,
-                      text: "New swap request from Mike Chen",
-                      time: "2 days ago",
-                      color: "text-blue-600",
-                    },
-                  ].map((activity, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center space-x-4 p-4 rounded-2xl hover:bg-white/50 transition-colors"
-                    >
+                  {notifications.length > 0 ? (
+                    notifications.slice(0, 4).map((notification, index) => (
                       <div
-                        className={`w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center ${activity.color}`}
+                        key={notification.notificationId || index}
+                        className="flex items-center space-x-4 p-4 rounded-2xl hover:bg-white/50 transition-colors"
                       >
-                        <activity.icon className="w-5 h-5" />
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-emerald-600">
+                          <CheckCircle className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-gray-900 font-medium">{notification.title}</p>
+                          <p className="text-sm text-gray-500">
+                            {notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() : "N/A"}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-gray-900 font-medium">{activity.text}</p>
-                        <p className="text-sm text-gray-500">{activity.time}</p>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No recent activity</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
@@ -884,11 +723,19 @@ const DashBoard = () => {
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {userItems.map((item) => (
-                  <ItemCard key={item.itemId} item={item} />
-                ))}
-              </div>
+              {userItems.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userItems.map((item) => (
+                    <ItemCard key={item.itemId} item={item} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Shirt className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">No items listed yet</p>
+                  <p className="text-gray-400">Start by listing your first item!</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -906,11 +753,19 @@ const DashBoard = () => {
                   </select>
                 </div>
               </div>
-              <div className="space-y-4">
-                {userSwaps.map((swap) => (
-                  <SwapCard key={swap.swap_id} swap={swap} />
-                ))}
-              </div>
+              {userSwaps.length > 0 ? (
+                <div className="space-y-4">
+                  {userSwaps.map((swap) => (
+                    <SwapCard key={swap.swap_id} swap={swap} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Recycle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">No swaps yet</p>
+                  <p className="text-gray-400">Start swapping to see your activity here!</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -929,10 +784,12 @@ const DashBoard = () => {
                 <div className="bg-white/20 rounded-full h-4 mb-2">
                   <div
                     className="bg-white rounded-full h-4 transition-all duration-1000"
-                    style={{ width: `${(userData.points_balance / nextLevelPoints) * 100}%` }}
+                    style={{ width: `${Math.min((userData.points_balance / nextLevelPoints) * 100, 100)}%` }}
                   ></div>
                 </div>
-                <p className="text-purple-100">{nextLevelPoints - userData.points_balance} points to next level</p>
+                <p className="text-purple-100">
+                  {Math.max(nextLevelPoints - userData.points_balance, 0)} points to next level
+                </p>
               </div>
 
               {/* Achievement Badges */}
@@ -950,21 +807,21 @@ const DashBoard = () => {
                     <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Leaf className="w-8 h-8 text-white" />
                     </div>
-                    <h4 className="text-3xl font-bold text-gray-900">{carbonSaved.toFixed(1)}kg</h4>
+                    <h4 className="text-3xl font-bold text-gray-900">{animatedStats.carbonSaved.toFixed(1)}kg</h4>
                     <p className="text-gray-600">CO₂ Saved</p>
                   </div>
                   <div className="text-center">
                     <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Recycle className="w-8 h-8 text-white" />
                     </div>
-                    <h4 className="text-3xl font-bold text-gray-900">{approvedItems}</h4>
+                    <h4 className="text-3xl font-bold text-gray-900">{animatedStats.itemsListed}</h4>
                     <p className="text-gray-600">Items Shared</p>
                   </div>
                   <div className="text-center">
                     <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Users className="w-8 h-8 text-white" />
                     </div>
-                    <h4 className="text-3xl font-bold text-gray-900">{completedSwaps}</h4>
+                    <h4 className="text-3xl font-bold text-gray-900">{animatedStats.swapsCompleted}</h4>
                     <p className="text-gray-600">People Helped</p>
                   </div>
                 </div>
