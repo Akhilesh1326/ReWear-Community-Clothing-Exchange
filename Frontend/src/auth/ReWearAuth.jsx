@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Recycle, Shirt, User, Mail, Lock, ArrowRight } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const ReWearAuth = () => {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -50,6 +52,7 @@ const ReWearAuth = () => {
         if (response.status === 200) {
           alert('Registration successful!');
           // Optionally redirect or update UI state
+          navigate("/dashboard");
         }
       } else {
         // Login API call
@@ -63,6 +66,8 @@ const ReWearAuth = () => {
         if (response.status === 200) {
           alert('Login successful!');
           // Optionally redirect or update UI state
+          navigate("/dashboard");
+          
         }
       }
     } catch (error) {
