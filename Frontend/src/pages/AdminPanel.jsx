@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, ShoppingBag, Shirt, Search, XCircle, CheckCircle, Edit, Trash2, Eye, PlusCircle, Recycle, ArrowUp, ArrowDown } from 'lucide-react';
 
-const ReWearAdminPanel = () => {
+const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('users'); // 'users', 'orders', 'listings'
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -692,4 +692,4 @@ const ReWearAdminPanel = () => {
   );
 };
 
-export default ReWearAdminPanel;
+export default AdminPanel;
